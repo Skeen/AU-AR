@@ -367,14 +367,25 @@ public class UtilAR {
 	 * The given mat must have 1 or 3 channels with one byte per channel (signed or unsigned).
 	 */
 	public static void imDrawBackground(Mat mat) {
-		Texture tex = bgTextures.get(mat.nativeObj);
+		long key = mat.width()*2000 + mat.height()*6+mat.channels();
+		Texture tex = bgTextures.get(key);
 		if(tex==null) {
 			tex = createMatTexture(mat);
-			bgTextures.put(mat.nativeObj,tex);
+			bgTextures.put(key,tex);
+			System.out.println(tex);
 		}
 		imToTexture(mat,tex);
 		texDrawBackground(tex);
-		tex.dispose();
+	}
+
+	/**
+	 * Disposes all automatically created textures.
+	 */
+	public static void disposeTextures() {
+		for(Texture tex:bgTextures.values()) {
+			tex.dispose();
+		}
+		bgTextures.clear();
 	}
 
 	//------------------------MAT-VIEW------------------------------------------
