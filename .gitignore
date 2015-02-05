@@ -17,6 +17,17 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Java files
+*.class
+
+# Project specific files
+Fuchs-gdx-desktop/bin/*
+Fuchs-gdx-core/bin/*
+
+# Vim files
+*.swp
+*~
+
 # =========================
 # Operating System Files
 # =========================
@@ -30,6 +41,8 @@ $RECYCLE.BIN/
 
 # Thumbnails
 ._*
+
+# Eclipse project files
 .metadata/*
 
 # Files that might appear on external disk

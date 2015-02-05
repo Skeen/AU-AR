@@ -7,6 +7,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 
@@ -32,7 +33,6 @@ import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 
 public class UtilAR {
 
@@ -462,7 +462,7 @@ public class UtilAR {
 				byte[] bytes = byteMat.toArray();
 
 				try {
-					image = ImageIO.read(new ByteInputStream(bytes,bytes.length));
+					image = ImageIO.read(new ByteArrayInputStream(bytes));
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
