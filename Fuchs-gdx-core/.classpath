@@ -3,10 +3,10 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/opencv"/>
-	<classpathentry kind="lib" path="/home/skeen/Desktop/AR/shared/AR/jar/opencv-2410.jar"/>
-	<classpathentry kind="lib" path="/home/skeen/Desktop/AR/shared/AR/jar/gdx-natives.jar"/>
-	<classpathentry kind="lib" path="/home/skeen/Desktop/AR/shared/AR/jar/gdx-backend-lwjgl-natives.jar"/>
-	<classpathentry kind="lib" path="/home/skeen/Desktop/AR/shared/AR/jar/gdx-backend-lwjgl.jar"/>
-	<classpathentry kind="lib" path="/home/skeen/Desktop/AR/shared/AR/jar/gdx.jar"/>
+	<classpathentry kind="lib" path="/Fuchs-gdx-desktop/jar/gdx-backend-lwjgl-natives.jar"/>
+	<classpathentry kind="lib" path="/Fuchs-gdx-desktop/jar/gdx-backend-lwjgl.jar"/>
+	<classpathentry kind="lib" path="/Fuchs-gdx-desktop/jar/gdx-natives.jar"/>
+	<classpathentry kind="lib" path="/Fuchs-gdx-desktop/jar/gdx.jar"/>
+	<classpathentry kind="lib" path="/Fuchs-gdx-desktop/jar/opencv-2410.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
