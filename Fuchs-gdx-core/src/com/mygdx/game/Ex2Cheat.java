@@ -10,13 +10,32 @@ import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Size;
 
 import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.graphics.g3d.Environment;
+import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
 import org.opencv.core.Point3;
 
 public class Ex2Cheat implements ApplicationListener 
 {
-	VideoCapture cap;
-    Mat image;
+	private VideoCapture cap;
+    private Mat image;
+    private Environment environment;
+	private PerspectiveCamera cam;
+	private ModelBatch modelBatch;
+	private Model model;
 	
 	@Override
 	public void create() 
@@ -30,11 +49,42 @@ public class Ex2Cheat implements ApplicationListener
 		cap.read(image);
 		while(image.type() == 0)
 			cap.read(image);
+		
+		environment = new Environment();
+		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
+		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
+		modelBatch = new ModelBatch();
+		cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		cam.position.set(new Vector3(5f,5f,5f));
+		cam.lookAt(0f, 0f, 0f);
+		cam.near = 1f;
+		cam.far = 300f;
+		cam.update();
+		
+		ModelBuilder modelBuilder = new ModelBuilder();
+		model = modelBuilder.createBox(1.6f, 1.6f, 1.6f,
+				new Material(ColorAttribute.createDiffuse(Color.YELLOW)),
+					Usage.Position | Usage.Normal);
 	}
 
 	@Override
 	public void render() 
     {
+		Array<ModelInstance> instances = new Array<ModelInstance>();
+		ModelBuilder modelBuilder = new ModelBuilder();
+		model = modelBuilder.createArrow(0f, 0f, 0f, 1f, 0f, 0f,
+				0.1f, 0.2f, 100, 1,
+				new Material(ColorAttribute.createDiffuse(Color.GREEN)), Usage.Position | Usage.Normal);
+		instances.add(new ModelInstance(model));
+		model = modelBuilder.createArrow(0f, 0f, 0f, 0f, 1f, 0f,
+				0.1f, 0.2f, 100, 1,
+				new Material(ColorAttribute.createDiffuse(Color.RED)), Usage.Position | Usage.Normal);
+		instances.add(new ModelInstance(model));
+		model = modelBuilder.createArrow(0f, 0f, 0f, 0f, 0f, 1f,
+				0.1f, 0.2f, 100, 1,
+				new Material(ColorAttribute.createDiffuse(Color.BLUE)), Usage.Position | Usage.Normal);
+		instances.add(new ModelInstance(model));
+		
 		cap.read(image);
 		Size board = new Size(5,7);
 		MatOfPoint2f corners = new MatOfPoint2f();
@@ -47,8 +97,7 @@ public class Ex2Cheat implements ApplicationListener
 		{
 			Calib3d.drawChessboardCorners(image, board, corners, patternfound);
 			
-	        float cell_size = 1;
-	        
+	        float cell_size = 1f;
 	        Point3[] points = new Point3[(int)board.height*(int)board.width];
 	        for(int i = 0; i < board.height; ++i)
 	        {
@@ -58,6 +107,8 @@ public class Ex2Cheat implements ApplicationListener
 	            }
 	        }
 	        
+	        //instances.add(new ModelInstance(model, 0, 0, 0f));
+	        
 	        MatOfPoint3f points3d = new MatOfPoint3f(points);
 
 			Mat rvec = new Mat();
@@ -65,23 +116,18 @@ public class Ex2Cheat implements ApplicationListener
 			Calib3d.solvePnP(points3d, corners, UtilAR.getDefaultIntrinsicMatrix(1920,1080),
 				UtilAR.getDefaultDistortionCoefficients(), rvec, tvec);
 			
-			System.out.print("{");
-			for(int x = 0; x < rvec.rows(); x++)
-			{
-				System.out.print(rvec.get(x, 0)[0]);
-				System.out.print(",");
-			}
-			System.out.println("}");
-			System.out.print("[");
-			for(int x = 0; x < tvec.rows(); x++)
-			{
-				System.out.print(tvec.get(x, 0)[0]);
-				System.out.print(",");
-			}
-			System.out.println("]");
+			UtilAR.setCameraByRT(rvec, tvec, cam);
 		}        
                 
+		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
 		UtilAR.imDrawBackground(image);
+		
+		modelBatch.begin(cam);
+		modelBatch.render(instances, environment);
+		modelBatch.end();
+		
 	}
 	
 	@Override
