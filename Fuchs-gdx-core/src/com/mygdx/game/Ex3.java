@@ -8,6 +8,7 @@ import org.opencv.core.Core;
 import org.opencv.highgui.Highgui;
 import org.opencv.highgui.VideoCapture;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
@@ -41,6 +42,7 @@ public class Ex3 implements ApplicationListener
 	private VideoCapture cap;
     private Mat image;
     private Mat work_image;
+    private Mat clean_image;
     private Environment environment;
 	private PerspectiveCamera cam;
 	private ModelBatch modelBatch;
@@ -53,6 +55,7 @@ public class Ex3 implements ApplicationListener
 		cap = new VideoCapture();
        	image = new Mat();
        	work_image = new Mat();
+       	clean_image = new Mat();
 
 		cap.open(1);
 		cap.read(image);
@@ -93,14 +96,68 @@ public class Ex3 implements ApplicationListener
 		instances.add(new ModelInstance(arrow));
 		// Read an image
 		cap.read(image);
+		clean_image = image.clone();
+		
+		// a) Create a binary image.
 		// Grayscale it
 		Imgproc.cvtColor(image, work_image, Imgproc.COLOR_BGR2GRAY);
+		UtilAR.imShow("B/W", work_image);
 		// Threshold it
-		Imgproc.threshold(work_image, work_image, 100.0f, 1.0f, Imgproc.THRESH_BINARY);
-		// Find the contours
+		Imgproc.threshold(work_image, work_image, 50.0f, 255.0f, Imgproc.THRESH_BINARY);
+		UtilAR.imShow("THRESHOLD", work_image);
+		
+		// b) Find the contours.
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-		Imgproc.findContours(work_image, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+		Imgproc.findContours(work_image, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
+		Imgproc.drawContours(work_image, contours, -1, new Scalar(255));
 		Imgproc.drawContours(image, contours, -1, new Scalar(0,0,255));
+		UtilAR.imShow("CONTOUR", work_image);
+		UtilAR.imShow("CONTOUR-COLOR", image);
+		
+		// c) Create approximative polygons.
+		List<MatOfPoint> polygons = new ArrayList<MatOfPoint>();
+		for(MatOfPoint contour : contours)
+		{
+			MatOfPoint2f thisContour2f = new MatOfPoint2f();
+		    MatOfPoint approxContour = new MatOfPoint();
+		    MatOfPoint2f approxContour2f = new MatOfPoint2f();
+			
+		    contour.convertTo(thisContour2f, CvType.CV_32FC2);
+		    Imgproc.approxPolyDP(thisContour2f, approxContour2f, 2, true);
+		    approxContour2f.convertTo(approxContour, CvType.CV_32S);
+			
+			polygons.add(approxContour);
+		}
+		Imgproc.drawContours(image, polygons, -1, new Scalar(0,255,0));
+		UtilAR.imShow("POLY-COLOR", image);
+		
+		// d) Discard polygons which are not marker candidates.
+		List<MatOfPoint> squares = new ArrayList<MatOfPoint>();
+		for(MatOfPoint polygon : polygons)
+		{
+			if(polygon.size().height == 4) {
+				squares.add(polygon);
+			}
+		}
+		Imgproc.drawContours(image, squares, -1, new Scalar(255,0,0));
+		UtilAR.imShow("SQUARE-COLOR", image);
+		
+		// e) For each marker candidate draw the four edges and/or corners. Display the result image.
+		Imgproc.drawContours(clean_image, squares, -1, new Scalar(255,255,0));
+		UtilAR.imShow("SQUARE-CLEAN-COLOR", clean_image);
+		
+		// f) Use the PnP solver to render the 3D coordinate system onto the marker candidates.
+		
+		// g) Unwarp the content of the found marker candidate and display the unwarped image.
+		
+		/*
+		for(MatOfPoint p : contours)
+		{
+			System.out.println(p);
+		}
+		*/
+		
+		
 		
 		//System.out.println(image.size());
 		
