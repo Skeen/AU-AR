@@ -47,24 +47,27 @@ public class Ex2Cheat implements ApplicationListener
         //System.out.println(cap.open(0));
        	image = new Mat();
 
-		cap.open(1);
+		cap.open(0);
 		cap.read(image);
 		while(image.type() == 0)
+		{
 			cap.read(image);
-	
+			System.out.println("hu");
+		}
+		
 		environment = new Environment();
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
 		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
 		modelBatch = new ModelBatch();
-		cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		cam = new PerspectiveCamera(39, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		cam.position.set(new Vector3(5f,5f,5f));
 		cam.lookAt(0f, 0f, 0f);
 		cam.near = 1f;
-		cam.far = 10000f;
+		cam.far = 500f;
 		cam.update();
 		
 		ModelBuilder modelBuilder = new ModelBuilder();
-		model = modelBuilder.createBox(100f, 100f, 100f,
+		model = modelBuilder.createBox(1f, 1f, 1f,
 				new Material(ColorAttribute.createDiffuse(Color.YELLOW)),
 					Usage.Position | Usage.Normal);
 	}
@@ -102,14 +105,16 @@ public class Ex2Cheat implements ApplicationListener
 		{
 			Calib3d.drawChessboardCorners(image, board, corners, patternfound);
 			
-	        float cell_size = 200f;
+	        float cell_size = 1f;
 	        Point3[] points = new Point3[(int)board.height*(int)board.width];
 	        for(int i = 0; i < board.height; ++i)
 	        {
 	            for(int j = 0; j < board.width; ++j)
 	            {
-	            	points[j+(i*(int)board.width)] = new Point3(j*cell_size, i*cell_size, 0.0f);
-	            	//instances.add(new ModelInstance(model, j*cell_size, i*cell_size, 0f));
+	            	points[j+(i*(int)board.width)] = new Point3(j*cell_size, 0.0f, i*cell_size);
+	            	if((i+j)%2 == 1) {
+	            		instances.add(new ModelInstance(model, j*cell_size+0.5f, 0.5f, i*cell_size+0.5f));
+	            	}
 	            }
 	            
 	            //instances.add(new ModelInstance(model, -130, -290+i*cell_size*2, 400f));
