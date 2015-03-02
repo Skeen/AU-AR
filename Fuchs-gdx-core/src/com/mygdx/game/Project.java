@@ -152,6 +152,7 @@ public class Project implements ApplicationListener
 			{
 				for(int y=0; y<8; ++y)
 				{
+					// White pieces
 					if(ai.myboard[x][y] == (AI.WHITE | AI.PAWN))
 					{
 						instances.add(new ModelInstance(pawn, pos_board[x][y]));
@@ -175,6 +176,31 @@ public class Project implements ApplicationListener
 					else if(ai.myboard[x][y] == (AI.WHITE | AI.KING))
 					{
 						instances.add(new ModelInstance(king, pos_board[x][y]));
+					}
+					// Black pieces
+					else if(ai.myboard[x][y] == (AI.BLACK | AI.PAWN))
+					{
+						instances.add(new ModelInstance(black_pawn, pos_board[x][y]));
+					}
+					else if(ai.myboard[x][y] == (AI.BLACK | AI.BISHOP))
+					{
+						instances.add(new ModelInstance(black_bishop, pos_board[x][y]));
+					}
+					else if(ai.myboard[x][y] == (AI.BLACK | AI.KNIGHT))
+					{
+						instances.add(new ModelInstance(black_horse, pos_board[x][y]));
+					}
+					else if(ai.myboard[x][y] == (AI.BLACK | AI.ROOK))
+					{
+						instances.add(new ModelInstance(black_rook, pos_board[x][y]));
+					}
+					else if(ai.myboard[x][y] == (AI.BLACK | AI.QUEEN))
+					{
+						instances.add(new ModelInstance(black_queen, pos_board[x][y]));
+					}
+					else if(ai.myboard[x][y] == (AI.BLACK | AI.KING))
+					{
+						instances.add(new ModelInstance(black_king, pos_board[x][y]));
 					}
 				}
 			}
