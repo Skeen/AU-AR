@@ -1,6 +1,8 @@
 package com.mygdx.game;
 
 
+import java.io.File;
+
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.highgui.Highgui;
@@ -13,6 +15,8 @@ import org.opencv.core.Size;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.loaders.ModelLoader;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -24,9 +28,11 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.UBJsonReader;
 
 import org.opencv.core.Point3;
 
@@ -37,12 +43,18 @@ public class Project implements ApplicationListener
     private Environment environment;
 	private PerspectiveCamera cam;
 	private ModelBatch modelBatch;
-	private Model pawn;
-	private Model rook;
-	private Model bishop;
-	private Model king;
-	private Model queen;
-	private Model horse;
+	private Model white_pawn;
+	private Model black_pawn;
+	private Model white_rook;
+	private Model black_rook;
+	private Model white_bishop;
+	private Model black_bishop;
+	private Model white_king;
+	private Model black_king;
+	private Model white_queen;
+	private Model black_queen;
+	private Model white_horse;
+	private Model black_horse;
 	
 	private MatOfPoint3f points3d;
 	private Size board = new Size(5,7);
@@ -58,7 +70,7 @@ public class Project implements ApplicationListener
         //System.out.println(cap.open(0));
        	image = new Mat();
 
-		cap.open(2);
+		cap.open(0);
 		cap.read(image);
 		while(image.type() == 0)
 		{
@@ -78,29 +90,26 @@ public class Project implements ApplicationListener
 		cam.update();
 		
 		ModelBuilder modelBuilder = new ModelBuilder();
-		pawn = modelBuilder.createBox(0.5f, 0.5f, 0.5f,
-				new Material(ColorAttribute.createDiffuse(Color.YELLOW)),
-					Usage.Position | Usage.Normal);
-		
-		rook = modelBuilder.createBox(1f, 1f, 1f,
-				new Material(ColorAttribute.createDiffuse(Color.RED)),
-				Usage.Position | Usage.Normal);
-		
-		bishop = modelBuilder.createBox(1f, 1f, 1f,
-				new Material(ColorAttribute.createDiffuse(Color.BLUE)),
-				Usage.Position | Usage.Normal);
-		
-		queen = modelBuilder.createBox(1f, 1f, 1f,
-				new Material(ColorAttribute.createDiffuse(Color.WHITE)),
-				Usage.Position | Usage.Normal);
-		
-		king = modelBuilder.createBox(1f, 1f, 1f,
-				new Material(ColorAttribute.createDiffuse(Color.BLACK)),
-				Usage.Position | Usage.Normal);
-
-		horse = modelBuilder.createBox(1f, 1f, 1f,
-				new Material(ColorAttribute.createDiffuse(Color.GREEN)),
-				Usage.Position | Usage.Normal);
+		UBJsonReader jsonReader = new UBJsonReader();
+		ModelLoader loader = new G3dModelLoader(jsonReader);
+		black_pawn = loader.loadModel(new FileHandle(new File("assets/Pawn.g3db")));
+		white_pawn = loader.loadModel(new FileHandle(new File("assets/Pawn.g3db")));
+		black_pawn.materials.get(0).set(ColorAttribute.createDiffuse(Color.BLACK));
+        black_bishop = loader.loadModel(new FileHandle(new File("assets/Bishop.g3db")));
+        white_bishop = loader.loadModel(new FileHandle(new File("assets/Bishop.g3db")));
+		black_bishop.materials.get(0).set(ColorAttribute.createDiffuse(Color.BLACK));
+        black_horse = loader.loadModel(new FileHandle(new File("assets/Horse.g3db")));
+        white_horse = loader.loadModel(new FileHandle(new File("assets/Horse.g3db")));
+		black_horse.materials.get(0).set(ColorAttribute.createDiffuse(Color.BLACK));
+        black_rook = loader.loadModel(new FileHandle(new File("assets/Rook.g3db")));
+        white_rook = loader.loadModel(new FileHandle(new File("assets/Rook.g3db")));
+		black_rook.materials.get(0).set(ColorAttribute.createDiffuse(Color.BLACK));
+        black_queen = loader.loadModel(new FileHandle(new File("assets/Queen.g3db")));
+        white_queen = loader.loadModel(new FileHandle(new File("assets/Queen.g3db")));
+		black_queen.materials.get(0).set(ColorAttribute.createDiffuse(Color.BLACK));
+        black_king = loader.loadModel(new FileHandle(new File("assets/King.g3db")));
+        white_king = loader.loadModel(new FileHandle(new File("assets/King.g3db")));
+		black_king.materials.get(0).set(ColorAttribute.createDiffuse(Color.BLACK));
 
         Point3[] points = new Point3[(int)board.height*(int)board.width];
         for(int i = 0; i < board.height; ++i)
@@ -117,7 +126,7 @@ public class Project implements ApplicationListener
         {
             for(int j = 0; j < 8; ++j)
             {
-            	pos_board[i][j] = new Vector3(i, 0.0f, j);
+            	pos_board[i][j] = new Vector3(i-0.5f, 0.0f, j-0.5f);
             }
         }
 	}
@@ -208,7 +217,10 @@ public class Project implements ApplicationListener
                 
 		//Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		//Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-
+		for(ModelInstance instance : instances)
+		{
+			instance.transform.scale(0.3f,0.3f,0.3f);
+		}
 		UtilAR.imDrawBackground(image);
 		
 		modelBatch.begin(cam);

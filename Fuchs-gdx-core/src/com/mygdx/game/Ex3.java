@@ -1,5 +1,6 @@
 package com.mygdx.game;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,6 +23,8 @@ import org.opencv.core.Size;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.loaders.ModelLoader;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -34,6 +37,7 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
@@ -97,6 +101,11 @@ public class Ex3 implements ApplicationListener
 				0.1f, 0.2f, 100, 1,
 				new Material(ColorAttribute.createDiffuse(Color.BLUE)), Usage.Position | Usage.Normal);
 		instances.add(new ModelInstance(arrow));
+		
+		ModelLoader loader = new ObjLoader();
+		model = loader.loadModel(new FileHandle(new File("C:\\Users\\Martin\\workspace\\Fuchs-gdx-core\\Bishop.g3db")));
+        //model = loader.loadModel(Gdx.files.internal("Bishop.g3db"));
+        instances.add(new ModelInstance(model));
 		
 		// Read an image
 		cap.read(image);
