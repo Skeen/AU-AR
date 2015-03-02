@@ -155,27 +155,27 @@ public class Project implements ApplicationListener
 					// White pieces
 					if(ai.myboard[x][y] == (AI.WHITE | AI.PAWN))
 					{
-						instances.add(new ModelInstance(pawn, pos_board[x][y]));
+						instances.add(new ModelInstance(white_pawn, pos_board[x][y]));
 					}
 					else if(ai.myboard[x][y] == (AI.WHITE | AI.BISHOP))
 					{
-						instances.add(new ModelInstance(bishop, pos_board[x][y]));
+						instances.add(new ModelInstance(white_bishop, pos_board[x][y]));
 					}
 					else if(ai.myboard[x][y] == (AI.WHITE | AI.KNIGHT))
 					{
-						instances.add(new ModelInstance(horse, pos_board[x][y]));
+						instances.add(new ModelInstance(white_horse, pos_board[x][y]));
 					}
 					else if(ai.myboard[x][y] == (AI.WHITE | AI.ROOK))
 					{
-						instances.add(new ModelInstance(rook, pos_board[x][y]));
+						instances.add(new ModelInstance(white_rook, pos_board[x][y]));
 					}
 					else if(ai.myboard[x][y] == (AI.WHITE | AI.QUEEN))
 					{
-						instances.add(new ModelInstance(queen, pos_board[x][y]));
+						instances.add(new ModelInstance(white_queen, pos_board[x][y]));
 					}
 					else if(ai.myboard[x][y] == (AI.WHITE | AI.KING))
 					{
-						instances.add(new ModelInstance(king, pos_board[x][y]));
+						instances.add(new ModelInstance(white_king, pos_board[x][y]));
 					}
 					// Black pieces
 					else if(ai.myboard[x][y] == (AI.BLACK | AI.PAWN))
