@@ -1,6 +1,7 @@
 package com.mygdx.game;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -71,11 +72,11 @@ public class Ex3 implements ApplicationListener
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
 		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
 		modelBatch = new ModelBatch();
-		cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		cam.position.set(new Vector3(0f,0f,0f));
+		cam = new PerspectiveCamera(39, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		cam.position.set(new Vector3(5f,5f,5f));
 		cam.lookAt(0f, 0f, 0f);
 		cam.near = 1f;
-		cam.far = 300f;
+		cam.far = 500f;
 		cam.update();
 	}
 
@@ -96,6 +97,7 @@ public class Ex3 implements ApplicationListener
 				0.1f, 0.2f, 100, 1,
 				new Material(ColorAttribute.createDiffuse(Color.BLUE)), Usage.Position | Usage.Normal);
 		instances.add(new ModelInstance(arrow));
+		
 		// Read an image
 		cap.read(image);
 		clean_image = image.clone();
@@ -177,77 +179,65 @@ public class Ex3 implements ApplicationListener
 				}
 			}
 		}
-		Imgproc.drawContours(image, areasquares, -1, new Scalar(255,0,0));
+		
+		List<MatOfPoint> crosspsquares = new ArrayList<MatOfPoint>();
+		if(squares.isEmpty() == false)
+		{
+			for(MatOfPoint square : areasquares)
+			{
+				double[] corner1 = square.get(0, 0);
+				double[] corner2 = square.get(1, 0);
+				double[] corner3 = square.get(2, 0);
+				double a = corner1[0]-corner2[0];
+				double x = corner3[0]-corner2[0];
+				double b = corner1[1]-corner2[1];
+				double y = corner3[1]-corner2[1];
+				double crossp = a*y-b*x;
+				if(crossp > 0)
+				{
+					crosspsquares.add(square);
+				}
+
+			}
+		}
+		
+		Imgproc.drawContours(image, crosspsquares, -1, new Scalar(255,0,0));
 		//UtilAR.imShow("SQUARE-COLOR", image);
 		
 		// e) For each marker candidate draw the four edges and/or corners. Display the result image.
-		Imgproc.drawContours(clean_image, areasquares, -1, new Scalar(255,255,0));
-		UtilAR.imShow("SQUARE-CLEAN-COLOR", clean_image);
+		Imgproc.drawContours(clean_image, crosspsquares, -1, new Scalar(255,255,0));
+		//UtilAR.imShow("SQUARE-CLEAN-COLOR", clean_image);
 		
-		// f) Use the PnP solver to render the 3D coordinate system onto the marker candidates.
+		if(crosspsquares.size() == 1)
+		{
+			MatOfPoint mat_square = crosspsquares.get(0);
+			MatOfPoint2f square = new MatOfPoint2f();
+			mat_square.convertTo(square, CvType.CV_32FC2);
+			
+			// f) Use the PnP solver to render the 3D coordinate system onto the marker candidates.
+			Point3[] points = {new Point3(0,0,0),new Point3(0,0,1),new Point3(1,0,0),new Point3(1,0,1)};
+			MatOfPoint3f points3d = new MatOfPoint3f(points);
+
+		Mat rvec = new Mat();
+		Mat tvec = new Mat();
+		Calib3d.solvePnP(points3d, square, UtilAR.getDefaultIntrinsicMatrix(Gdx.graphics.getWidth(),Gdx.graphics.getHeight()),
+			UtilAR.getDefaultDistortionCoefficients(), rvec, tvec);
+		
+		UtilAR.setCameraByRT(rvec, tvec, cam);
+		System.out.println("HIT!");
+		}
+		if(crosspsquares.size() > 1)
+		{
+			System.out.println("MORE THAN ONE!!");
+		}
 		
 		// g) Unwarp the content of the found marker candidate and display the unwarped image.
 		
-		/*
-		for(MatOfPoint p : contours)
-		{
-			System.out.println(p);
-		}
-		*/
+		UtilAR.imDrawBackground(clean_image);
 		
-		
-		
-		//System.out.println(image.size());
-		
-		//image = Highgui.imread("/home/skeen/Desktop/Chess_Board.png");
-		/*
-		Size board = new Size(5,7);
-		MatOfPoint2f corners = new MatOfPoint2f();
-		
-		boolean patternfound = Calib3d.findChessboardCorners(image,
-                board,
-                corners);
-		
-		if(patternfound)
-		{
-			Calib3d.drawChessboardCorners(image, board, corners, patternfound);
-			
-	        float cell_size = 1f;
-	        
-	        List<Point3> objPoints = new ArrayList<Point3>();
-	        for(int i = 0; i < board.height; ++i)
-	        {
-	        	for(int j = 0; j < board.width; ++j)
-	            {
-	        		objPoints.add(new Point3(j*cell_size, 0.0f, i*cell_size));
-	            }
-	        }
-
-	        MatOfPoint3f points3d = new MatOfPoint3f();
-	        points3d.fromList(objPoints);
-	        
-			Mat rvec = new Mat();
-			Mat tvec = new Mat();
-			Calib3d.solvePnP(points3d, corners, UtilAR.getDefaultIntrinsicMatrix(image.cols(),image.rows()),
-				UtilAR.getDefaultDistortionCoefficients(), rvec, tvec);
-			
-			UtilAR.setCameraByRT(rvec, tvec, cam);
-		}        
-                
-		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-		*/
-		/*
-		Texture t = UtilAR.createCameraTexture(cap);
-		UtilAR.imToTexture(image, t);
-		UtilAR.texDrawBackground(t);;
-		*/
-		UtilAR.imDrawBackground(image);
-		/*
 		modelBatch.begin(cam);
 		modelBatch.render(instances, environment);
 		modelBatch.end();
-		*/
 	}
 	
 	@Override
