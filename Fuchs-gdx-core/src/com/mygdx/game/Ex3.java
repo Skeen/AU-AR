@@ -66,6 +66,13 @@ public class Ex3 implements ApplicationListener
        	clean_image = new Mat();
 
 		cap.open(0);
+		
+		boolean wset = cap.set(Highgui.CV_CAP_PROP_FRAME_WIDTH, 1280);
+		boolean hset = cap.set(Highgui.CV_CAP_PROP_FRAME_HEIGHT, 720);
+
+		System.out.println(wset);
+		System.out.println(hset);
+		
 		cap.read(image);
 		while(image.type() == 0)
 		{
@@ -218,9 +225,10 @@ public class Ex3 implements ApplicationListener
 		Imgproc.drawContours(clean_image, crosspsquares, -1, new Scalar(255,255,0));
 		//UtilAR.imShow("SQUARE-CLEAN-COLOR", clean_image);
 		
-		if(crosspsquares.size() == 1)
+		int i = 0;
+		for(MatOfPoint mat_square : crosspsquares)
 		{
-			MatOfPoint mat_square = crosspsquares.get(0);
+			i++;
 			MatOfPoint2f square = new MatOfPoint2f();
 			mat_square.convertTo(square, CvType.CV_32FC2);
 			
@@ -239,9 +247,9 @@ public class Ex3 implements ApplicationListener
 		// g) Unwarp the content of the found marker candidate and display the unwarped image.
 		List<Point> homepoints = new ArrayList<Point>();
 		homepoints.add(new Point(0,0));
-		homepoints.add(new Point(Gdx.graphics.getWidth(),0));
-		homepoints.add(new Point(Gdx.graphics.getWidth(),Gdx.graphics.getHeight()));
-		homepoints.add(new Point(0,Gdx.graphics.getHeight()));
+		homepoints.add(new Point(image.width(),0));
+		homepoints.add(new Point(image.width(),image.height()));
+		homepoints.add(new Point(0,image.height()));
 
 		MatOfPoint2f homopoints = new MatOfPoint2f();
 		homopoints.fromList(homepoints);
@@ -249,12 +257,8 @@ public class Ex3 implements ApplicationListener
 		Mat M = Calib3d.findHomography(square, homopoints);
 		Mat dest = new Mat();
 		Imgproc.warpPerspective(image, dest, M, image.size());
-		UtilAR.imShow("OUTPUT-COLOR", dest);
+		UtilAR.imShow("OUTPUT-COLOR" + i, dest);
 		
-		}
-		if(crosspsquares.size() > 1)
-		{
-			System.out.println("MORE THAN ONE!!");
 		}
 		
 		UtilAR.imDrawBackground(clean_image);
