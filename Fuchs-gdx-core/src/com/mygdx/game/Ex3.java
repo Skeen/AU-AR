@@ -18,6 +18,7 @@ import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 
@@ -102,10 +103,10 @@ public class Ex3 implements ApplicationListener
 				new Material(ColorAttribute.createDiffuse(Color.BLUE)), Usage.Position | Usage.Normal);
 		instances.add(new ModelInstance(arrow));
 		
-		ModelLoader loader = new ObjLoader();
-		model = loader.loadModel(new FileHandle(new File("C:\\Users\\Martin\\workspace\\Fuchs-gdx-core\\Bishop.g3db")));
+		//ModelLoader loader = new ObjLoader();
+		//model = loader.loadModel(new FileHandle(new File("C:\\Users\\Martin\\workspace\\Fuchs-gdx-core\\Bishop.g3db")));
         //model = loader.loadModel(Gdx.files.internal("Bishop.g3db"));
-        instances.add(new ModelInstance(model));
+        //instances.add(new ModelInstance(model));
 		
 		// Read an image
 		cap.read(image);
@@ -122,8 +123,8 @@ public class Ex3 implements ApplicationListener
 		// b) Find the contours.
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 		Imgproc.findContours(work_image, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
-		Imgproc.drawContours(work_image, contours, -1, new Scalar(255));
-		Imgproc.drawContours(image, contours, -1, new Scalar(0,0,255));
+		//Imgproc.drawContours(work_image, contours, -1, new Scalar(255));
+		//Imgproc.drawContours(image, contours, -1, new Scalar(0,0,255));
 		//UtilAR.imShow("CONTOUR", work_image);
 		//UtilAR.imShow("CONTOUR-COLOR", image);
 		
@@ -141,7 +142,7 @@ public class Ex3 implements ApplicationListener
 			
 			polygons.add(approxContour);
 		}
-		Imgproc.drawContours(image, polygons, -1, new Scalar(0,255,0));
+		//Imgproc.drawContours(image, polygons, -1, new Scalar(0,255,0));
 		//UtilAR.imShow("POLY-COLOR", image);
 		
 		// d) Discard polygons which are not marker candidates.
@@ -202,7 +203,7 @@ public class Ex3 implements ApplicationListener
 				double b = corner1[1]-corner2[1];
 				double y = corner3[1]-corner2[1];
 				double crossp = a*y-b*x;
-				if(crossp > 0)
+				if(crossp < 0)
 				{
 					crosspsquares.add(square);
 				}
@@ -210,7 +211,7 @@ public class Ex3 implements ApplicationListener
 			}
 		}
 		
-		Imgproc.drawContours(image, crosspsquares, -1, new Scalar(255,0,0));
+		//Imgproc.drawContours(image, crosspsquares, -1, new Scalar(255,0,0));
 		//UtilAR.imShow("SQUARE-COLOR", image);
 		
 		// e) For each marker candidate draw the four edges and/or corners. Display the result image.
@@ -224,7 +225,7 @@ public class Ex3 implements ApplicationListener
 			mat_square.convertTo(square, CvType.CV_32FC2);
 			
 			// f) Use the PnP solver to render the 3D coordinate system onto the marker candidates.
-			Point3[] points = {new Point3(0,0,0),new Point3(0,0,1),new Point3(1,0,0),new Point3(1,0,1)};
+			Point3[] points = {new Point3(0,0,0),new Point3(0,0,1),new Point3(1,0,1),new Point3(1,0,0)};
 			MatOfPoint3f points3d = new MatOfPoint3f(points);
 
 		Mat rvec = new Mat();
@@ -234,13 +235,27 @@ public class Ex3 implements ApplicationListener
 		
 		UtilAR.setCameraByRT(rvec, tvec, cam);
 		System.out.println("HIT!");
+		
+		// g) Unwarp the content of the found marker candidate and display the unwarped image.
+		List<Point> homepoints = new ArrayList<Point>();
+		homepoints.add(new Point(0,0));
+		homepoints.add(new Point(Gdx.graphics.getWidth(),0));
+		homepoints.add(new Point(Gdx.graphics.getWidth(),Gdx.graphics.getHeight()));
+		homepoints.add(new Point(0,Gdx.graphics.getHeight()));
+
+		MatOfPoint2f homopoints = new MatOfPoint2f();
+		homopoints.fromList(homepoints);
+		
+		Mat M = Calib3d.findHomography(square, homopoints);
+		Mat dest = new Mat();
+		Imgproc.warpPerspective(image, dest, M, image.size());
+		UtilAR.imShow("OUTPUT-COLOR", dest);
+		
 		}
 		if(crosspsquares.size() > 1)
 		{
 			System.out.println("MORE THAN ONE!!");
 		}
-		
-		// g) Unwarp the content of the found marker candidate and display the unwarped image.
 		
 		UtilAR.imDrawBackground(clean_image);
 		

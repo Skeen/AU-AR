@@ -16,6 +16,6 @@ public class DesktopLauncher {
 	public static void main (String[] arg) {
 		System.loadLibrary("opencv_java2410");
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		new LwjglApplication(new Project(), config);
+		new LwjglApplication(new Ex3(), config);
 	}
 }
