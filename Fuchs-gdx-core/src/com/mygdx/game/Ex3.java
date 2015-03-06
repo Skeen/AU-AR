@@ -52,9 +52,19 @@ public class Ex3 implements ApplicationListener
     private Mat work_image;
     private Mat clean_image;
     private Environment environment;
-	private PerspectiveCamera cam;
+	private ArrayList<PerspectiveCamera> cam = new ArrayList<PerspectiveCamera>();
 	private ModelBatch modelBatch;
 	private Model model;
+	private Model model2;
+	//import templates in all 4 possible turns
+	private Mat triangle1 = Highgui.imread("assets/drei1.jpg");
+	private Mat triangle2 = Highgui.imread("assets/drei2.jpg");
+	private Mat triangle3 = Highgui.imread("assets/drei3.jpg");
+	private Mat triangle4 = Highgui.imread("assets/drei4.jpg");
+	private Mat corner1 = Highgui.imread("assets/eck1.jpg");
+	private Mat corner2 = Highgui.imread("assets/eck2.jpg");
+	private Mat corner3 = Highgui.imread("assets/eck3.jpg");
+	private Mat corner4 = Highgui.imread("assets/eck4.jpg");
 	
 	@Override
 	public void create() 
@@ -84,20 +94,28 @@ public class Ex3 implements ApplicationListener
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
 		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
 		modelBatch = new ModelBatch();
-		cam = new PerspectiveCamera(39, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		cam.position.set(new Vector3(5f,5f,5f));
-		cam.lookAt(0f, 0f, 0f);
-		cam.near = 1f;
-		cam.far = 500f;
-		cam.update();
+		
+		cam.add(new PerspectiveCamera(39, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
+		cam.add(new PerspectiveCamera(39, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
+		
+		//cam changed to an array to render something on multiple markers
+		for(PerspectiveCamera c : cam)
+		{
+			c.position.set(new Vector3(5f,5f,5f));
+			c.lookAt(0f, 0f, 0f);
+			c.near = 1f;
+			c.far = 500f;
+			c.update();
+		}
+		
 	}
 
 	@Override
 	public void render() 
     {
-		Array<ModelInstance> instances = new Array<ModelInstance>();
+		Array<Array<ModelInstance>> instances = new Array<Array<ModelInstance>>();
 		ModelBuilder modelBuilder = new ModelBuilder();
-		Model arrow = modelBuilder.createArrow(0f, 0f, 0f, 1f, 0f, 0f,
+		/*Model arrow = modelBuilder.createArrow(0f, 0f, 0f, 1f, 0f, 0f,
 				0.1f, 0.2f, 100, 1,
 				new Material(ColorAttribute.createDiffuse(Color.GREEN)), Usage.Position | Usage.Normal);
 		instances.add(new ModelInstance(arrow));
@@ -108,7 +126,7 @@ public class Ex3 implements ApplicationListener
 		arrow = modelBuilder.createArrow(0f, 0f, 0f, 0f, 0f, 1f,
 				0.1f, 0.2f, 100, 1,
 				new Material(ColorAttribute.createDiffuse(Color.BLUE)), Usage.Position | Usage.Normal);
-		instances.add(new ModelInstance(arrow));
+		instances.add(new ModelInstance(arrow));*/
 		
 		//ModelLoader loader = new ObjLoader();
 		//model = loader.loadModel(new FileHandle(new File("C:\\Users\\Martin\\workspace\\Fuchs-gdx-core\\Bishop.g3db")));
@@ -241,7 +259,7 @@ public class Ex3 implements ApplicationListener
 		Calib3d.solvePnP(points3d, square, UtilAR.getDefaultIntrinsicMatrix(Gdx.graphics.getWidth(),Gdx.graphics.getHeight()),
 			UtilAR.getDefaultDistortionCoefficients(), rvec, tvec);
 		
-		UtilAR.setCameraByRT(rvec, tvec, cam);
+		UtilAR.setCameraByRT(rvec, tvec, cam.get(i-1));
 		System.out.println("HIT!");
 		
 		// g) Unwarp the content of the found marker candidate and display the unwarped image.
@@ -257,15 +275,113 @@ public class Ex3 implements ApplicationListener
 		Mat M = Calib3d.findHomography(square, homopoints);
 		Mat dest = new Mat();
 		Imgproc.warpPerspective(image, dest, M, image.size());
-		UtilAR.imShow("OUTPUT-COLOR" + i, dest);
+		
+		//compare warped image with all the templates to determine the right one
+		Mat result1 = new Mat();
+		Mat result2 = new Mat();
+		Mat result3 = new Mat();
+		Mat result4 = new Mat();
+		Mat result5 = new Mat();
+		Mat result6 = new Mat();
+		Mat result7 = new Mat();
+		Mat result8 = new Mat();
+		
+		Imgproc.matchTemplate(dest, triangle1, result1, 1);
+		Imgproc.matchTemplate(dest, triangle2, result2, 1);
+		Imgproc.matchTemplate(dest, triangle3, result3, 1);
+		Imgproc.matchTemplate(dest, triangle4, result4, 1);
+		Imgproc.matchTemplate(dest, corner1, result5, 1);
+		Imgproc.matchTemplate(dest, corner2, result6, 1);
+		Imgproc.matchTemplate(dest, corner3, result7, 1);
+		Imgproc.matchTemplate(dest, corner4, result8, 1);
+		
+		//UtilAR.imShow("OUTPUT-COLOR" + i, dest);
+		
+		
+		// the results from the match template function differ a lot, doesnt work with a fixed threshold
+		// determine outliers by comparing to the average
+		double average = (result1.get(0, 0)[0]+result2.get(0, 0)[0]+result3.get(0, 0)[0]+result4.get(0, 0)[0]+result5.get(0, 0)[0]+result6.get(0, 0)[0]+result7.get(0, 0)[0]+result8.get(0, 0)[0])/8f;
+		double average1 = (result1.get(0, 0)[0]+result2.get(0, 0)[0]+result3.get(0, 0)[0]+result4.get(0, 0)[0])/4f;
+		double average2 = (result5.get(0, 0)[0]+result6.get(0, 0)[0]+result7.get(0, 0)[0]+result8.get(0, 0)[0])/4f;
+		
+		// instances is an array of arrays, because we have multiple worlds, one on each marker
+		instances.add(new Array<ModelInstance>());
+		
+		// giant IF to determine the right marker
+		if(result1.get(0, 0)[0] < 0.85f*average && result1.get(0, 0)[0] < 0.9f*average1)
+		{
+		model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 0f, 0f, 0.5f,
+				0.1f, 0.2f, 100, 1,
+				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
+		instances.get(i-1).add(new ModelInstance(model));
+		}
+		if(result2.get(0, 0)[0] < 0.85f*average && result2.get(0, 0)[0] < 0.9f*average1)
+		{
+		model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 0.5f, 0f, 1f,
+				0.1f, 0.2f, 100, 1,
+				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
+		instances.get(i-1).add(new ModelInstance(model));
+		}
+		if(result3.get(0, 0)[0] < 0.85f*average && result3.get(0, 0)[0] < 0.9f*average1)
+		{
+		model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 1f, 0f, 0.5f,
+				0.1f, 0.2f, 100, 1,
+				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
+		instances.get(i-1).add(new ModelInstance(model));
+		}
+		if(result4.get(0, 0)[0] < 0.85f*average && result4.get(0, 0)[0] < 0.9f*average1)
+		{
+		model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 0.5f, 0f, 0f,
+				0.1f, 0.2f, 100, 1,
+				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
+		instances.get(i-1).add(new ModelInstance(model));
+		}
+				
+		if(result5.get(0, 0)[0] < 0.85f*average && result5.get(0, 0)[0] < 0.9f*average2)
+		{
+		model2 = modelBuilder.createBox(0.5f, 0.5f, 0.5f,
+				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
+		instances.get(i-1).add(new ModelInstance(model2, 1, 0, 0));
+		}
+		if(result6.get(0, 0)[0] < 0.85f*average && result6.get(0, 0)[0] < 0.9f*average2)
+		{
+		model2 = modelBuilder.createBox(0.5f, 0.5f, 0.5f,
+				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
+		instances.get(i-1).add(new ModelInstance(model2));
+		}
+		if(result7.get(0, 0)[0] < 0.85f*average && result7.get(0, 0)[0] < 0.9f*average2)
+		{
+		model2 = modelBuilder.createBox(0.5f, 0.5f, 0.5f,
+				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
+		instances.get(i-1).add(new ModelInstance(model2, 0, 0, 1));
+		}
+		if(result8.get(0, 0)[0] < 0.85f*average && result8.get(0, 0)[0] < 0.9f*average2)
+		{
+		model2 = modelBuilder.createBox(0.5f, 0.5f, 0.5f,
+				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
+		instances.get(i-1).add(new ModelInstance(model2, 1, 0, 1));
+		}
+		
+		/*Imgproc.cvtColor(dest, destC, Imgproc.COLOR_BGR2GRAY);
+		Imgproc.cvtColor(triangle, triangleC, Imgproc.COLOR_BGR2GRAY);
+		Imgproc.calcHist(triangle, channels, mask, hist, histSize, ranges);
+		
+		
+		double corr = Imgproc.compareHist(destC, triangleC, Imgproc.CV_COMP_CORREL);
+		System.out.println(corr);*/
+		
 		
 		}
 		
 		UtilAR.imDrawBackground(clean_image);
 		
-		modelBatch.begin(cam);
-		modelBatch.render(instances, environment);
+		// render all the different worlds
+		for( int j=0; j<i; j++)
+		{
+		modelBatch.begin(cam.get(j));
+		modelBatch.render(instances.get(j), environment);
 		modelBatch.end();
+		}
 	}
 	
 	@Override
