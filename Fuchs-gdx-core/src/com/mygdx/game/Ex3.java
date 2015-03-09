@@ -1,11 +1,17 @@
 package com.mygdx.game;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
@@ -14,6 +20,7 @@ import org.opencv.highgui.VideoCapture;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
@@ -42,6 +49,13 @@ import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.LuminanceSource;
+import com.google.zxing.Reader;
+import com.google.zxing.Result;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
 
 import org.opencv.core.Point3;
 
@@ -55,16 +69,6 @@ public class Ex3 implements ApplicationListener
 	private ArrayList<PerspectiveCamera> cam = new ArrayList<PerspectiveCamera>();
 	private ModelBatch modelBatch;
 	private Model model;
-	private Model model2;
-	//import templates in all 4 possible turns
-	private Mat triangle1 = Highgui.imread("assets/drei1.jpg");
-	private Mat triangle2 = Highgui.imread("assets/drei2.jpg");
-	private Mat triangle3 = Highgui.imread("assets/drei3.jpg");
-	private Mat triangle4 = Highgui.imread("assets/drei4.jpg");
-	private Mat corner1 = Highgui.imread("assets/eck1.jpg");
-	private Mat corner2 = Highgui.imread("assets/eck2.jpg");
-	private Mat corner3 = Highgui.imread("assets/eck3.jpg");
-	private Mat corner4 = Highgui.imread("assets/eck4.jpg");
 	
 	@Override
 	public void create() 
@@ -75,7 +79,7 @@ public class Ex3 implements ApplicationListener
        	work_image = new Mat();
        	clean_image = new Mat();
 
-		cap.open(0);
+		cap.open(1);
 		
 		boolean wset = cap.set(Highgui.CV_CAP_PROP_FRAME_WIDTH, 1280);
 		boolean hset = cap.set(Highgui.CV_CAP_PROP_FRAME_HEIGHT, 720);
@@ -94,20 +98,17 @@ public class Ex3 implements ApplicationListener
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
 		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
 		modelBatch = new ModelBatch();
-		
-		cam.add(new PerspectiveCamera(39, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
-		cam.add(new PerspectiveCamera(39, Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
-		
-		//cam changed to an array to render something on multiple markers
-		for(PerspectiveCamera c : cam)
-		{
-			c.position.set(new Vector3(5f,5f,5f));
-			c.lookAt(0f, 0f, 0f);
-			c.near = 1f;
-			c.far = 500f;
-			c.update();
-		}
-		
+	}
+	
+	public void make_camera()
+	{
+		PerspectiveCamera c = new PerspectiveCamera(39, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		c.position.set(new Vector3(5f,5f,5f));
+		c.lookAt(0f, 0f, 0f);
+		c.near = 1f;
+		c.far = 500f;
+		c.update();
+		cam.add(c);
 	}
 
 	@Override
@@ -127,11 +128,6 @@ public class Ex3 implements ApplicationListener
 				0.1f, 0.2f, 100, 1,
 				new Material(ColorAttribute.createDiffuse(Color.BLUE)), Usage.Position | Usage.Normal);
 		instances.add(new ModelInstance(arrow));*/
-		
-		//ModelLoader loader = new ObjLoader();
-		//model = loader.loadModel(new FileHandle(new File("C:\\Users\\Martin\\workspace\\Fuchs-gdx-core\\Bishop.g3db")));
-        //model = loader.loadModel(Gdx.files.internal("Bishop.g3db"));
-        //instances.add(new ModelInstance(model));
 		
 		// Read an image
 		cap.read(image);
@@ -243,6 +239,7 @@ public class Ex3 implements ApplicationListener
 		Imgproc.drawContours(clean_image, crosspsquares, -1, new Scalar(255,255,0));
 		//UtilAR.imShow("SQUARE-CLEAN-COLOR", clean_image);
 		
+		cam.clear();
 		int i = 0;
 		for(MatOfPoint mat_square : crosspsquares)
 		{
@@ -254,133 +251,90 @@ public class Ex3 implements ApplicationListener
 			Point3[] points = {new Point3(0,0,0),new Point3(0,0,1),new Point3(1,0,1),new Point3(1,0,0)};
 			MatOfPoint3f points3d = new MatOfPoint3f(points);
 
-		Mat rvec = new Mat();
-		Mat tvec = new Mat();
-		Calib3d.solvePnP(points3d, square, UtilAR.getDefaultIntrinsicMatrix(Gdx.graphics.getWidth(),Gdx.graphics.getHeight()),
-			UtilAR.getDefaultDistortionCoefficients(), rvec, tvec);
+			Mat rvec = new Mat();
+			Mat tvec = new Mat();
+			Calib3d.solvePnP(points3d, square, UtilAR.getDefaultIntrinsicMatrix(Gdx.graphics.getWidth(),Gdx.graphics.getHeight()),
+				UtilAR.getDefaultDistortionCoefficients(), rvec, tvec);
+			
+			make_camera();
+			UtilAR.setCameraByRT(rvec, tvec, cam.get(i-1));
 		
-		UtilAR.setCameraByRT(rvec, tvec, cam.get(i-1));
-		System.out.println("HIT!");
-		
-		// g) Unwarp the content of the found marker candidate and display the unwarped image.
-		List<Point> homepoints = new ArrayList<Point>();
-		homepoints.add(new Point(0,0));
-		homepoints.add(new Point(image.width(),0));
-		homepoints.add(new Point(image.width(),image.height()));
-		homepoints.add(new Point(0,image.height()));
-
-		MatOfPoint2f homopoints = new MatOfPoint2f();
-		homopoints.fromList(homepoints);
-		
-		Mat M = Calib3d.findHomography(square, homopoints);
-		Mat dest = new Mat();
-		Imgproc.warpPerspective(image, dest, M, image.size());
-		
-		//compare warped image with all the templates to determine the right one
-		Mat result1 = new Mat();
-		Mat result2 = new Mat();
-		Mat result3 = new Mat();
-		Mat result4 = new Mat();
-		Mat result5 = new Mat();
-		Mat result6 = new Mat();
-		Mat result7 = new Mat();
-		Mat result8 = new Mat();
-		
-		Imgproc.matchTemplate(dest, triangle1, result1, 1);
-		Imgproc.matchTemplate(dest, triangle2, result2, 1);
-		Imgproc.matchTemplate(dest, triangle3, result3, 1);
-		Imgproc.matchTemplate(dest, triangle4, result4, 1);
-		Imgproc.matchTemplate(dest, corner1, result5, 1);
-		Imgproc.matchTemplate(dest, corner2, result6, 1);
-		Imgproc.matchTemplate(dest, corner3, result7, 1);
-		Imgproc.matchTemplate(dest, corner4, result8, 1);
-		
-		//UtilAR.imShow("OUTPUT-COLOR" + i, dest);
-		
-		
-		// the results from the match template function differ a lot, doesnt work with a fixed threshold
-		// determine outliers by comparing to the average
-		double average = (result1.get(0, 0)[0]+result2.get(0, 0)[0]+result3.get(0, 0)[0]+result4.get(0, 0)[0]+result5.get(0, 0)[0]+result6.get(0, 0)[0]+result7.get(0, 0)[0]+result8.get(0, 0)[0])/8f;
-		double average1 = (result1.get(0, 0)[0]+result2.get(0, 0)[0]+result3.get(0, 0)[0]+result4.get(0, 0)[0])/4f;
-		double average2 = (result5.get(0, 0)[0]+result6.get(0, 0)[0]+result7.get(0, 0)[0]+result8.get(0, 0)[0])/4f;
-		
-		// instances is an array of arrays, because we have multiple worlds, one on each marker
-		instances.add(new Array<ModelInstance>());
-		
-		// giant IF to determine the right marker
-		if(result1.get(0, 0)[0] < 0.85f*average && result1.get(0, 0)[0] < 0.9f*average1)
-		{
-		model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 0f, 0f, 0.5f,
-				0.1f, 0.2f, 100, 1,
-				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
-		instances.get(i-1).add(new ModelInstance(model));
-		}
-		if(result2.get(0, 0)[0] < 0.85f*average && result2.get(0, 0)[0] < 0.9f*average1)
-		{
-		model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 0.5f, 0f, 1f,
-				0.1f, 0.2f, 100, 1,
-				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
-		instances.get(i-1).add(new ModelInstance(model));
-		}
-		if(result3.get(0, 0)[0] < 0.85f*average && result3.get(0, 0)[0] < 0.9f*average1)
-		{
-		model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 1f, 0f, 0.5f,
-				0.1f, 0.2f, 100, 1,
-				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
-		instances.get(i-1).add(new ModelInstance(model));
-		}
-		if(result4.get(0, 0)[0] < 0.85f*average && result4.get(0, 0)[0] < 0.9f*average1)
-		{
-		model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 0.5f, 0f, 0f,
-				0.1f, 0.2f, 100, 1,
-				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
-		instances.get(i-1).add(new ModelInstance(model));
-		}
+			// g) Unwarp the content of the found marker candidate and display the unwarped image.
+			List<Point> homepoints = new ArrayList<Point>();
+			homepoints.add(new Point(0,0));
+			homepoints.add(new Point(image.width(),0));
+			homepoints.add(new Point(image.width(),image.height()));
+			homepoints.add(new Point(0,image.height()));
+	
+			MatOfPoint2f homopoints = new MatOfPoint2f();
+			homopoints.fromList(homepoints);
+			
+			Mat M = Calib3d.findHomography(square, homopoints);
+			Mat dest = new Mat();
+			Imgproc.warpPerspective(image, dest, M, image.size());
+			
+			//UtilAR.imShow("OUTPUT-COLOR" + i, dest);
+			
+			// instances is an array of arrays, because we have multiple worlds, one on each marker
+			instances.add(new Array<ModelInstance>());
+			
+			try
+			{
+				MatOfByte bytemat = new MatOfByte();
+				Highgui.imencode(".jpg", image, bytemat);
+				byte[] bytes = bytemat.toArray();
+				InputStream in = new ByteArrayInputStream(bytes);
+				BufferedImage barCodeBufferedImage = ImageIO.read(in);
 				
-		if(result5.get(0, 0)[0] < 0.85f*average && result5.get(0, 0)[0] < 0.9f*average2)
-		{
-		model2 = modelBuilder.createBox(0.5f, 0.5f, 0.5f,
-				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
-		instances.get(i-1).add(new ModelInstance(model2, 1, 0, 0));
-		}
-		if(result6.get(0, 0)[0] < 0.85f*average && result6.get(0, 0)[0] < 0.9f*average2)
-		{
-		model2 = modelBuilder.createBox(0.5f, 0.5f, 0.5f,
-				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
-		instances.get(i-1).add(new ModelInstance(model2));
-		}
-		if(result7.get(0, 0)[0] < 0.85f*average && result7.get(0, 0)[0] < 0.9f*average2)
-		{
-		model2 = modelBuilder.createBox(0.5f, 0.5f, 0.5f,
-				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
-		instances.get(i-1).add(new ModelInstance(model2, 0, 0, 1));
-		}
-		if(result8.get(0, 0)[0] < 0.85f*average && result8.get(0, 0)[0] < 0.9f*average2)
-		{
-		model2 = modelBuilder.createBox(0.5f, 0.5f, 0.5f,
-				new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
-		instances.get(i-1).add(new ModelInstance(model2, 1, 0, 1));
-		}
+				LuminanceSource source = new BufferedImageLuminanceSource(barCodeBufferedImage);
+				BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+				Reader reader = new QRCodeReader();
+				Result result = reader.decode(bitmap);
 		
-		/*Imgproc.cvtColor(dest, destC, Imgproc.COLOR_BGR2GRAY);
-		Imgproc.cvtColor(triangle, triangleC, Imgproc.COLOR_BGR2GRAY);
-		Imgproc.calcHist(triangle, channels, mask, hist, histSize, ranges);
-		
-		
-		double corr = Imgproc.compareHist(destC, triangleC, Imgproc.CV_COMP_CORREL);
-		System.out.println(corr);*/
-		
-		
+				//System.out.println("QR-Code text is " + result.getText());
+				String text = result.getText();
+				
+				// giant IF to determine the right marker
+				if(text.equals("1"))
+				{
+					model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 0f, 0f, 0.5f,
+						0.1f, 0.2f, 100, 1,
+						new Material(ColorAttribute.createDiffuse(Color.RED)), Usage.Position | Usage.Normal);
+					instances.get(i-1).add(new ModelInstance(model));
+				}
+				else if(text.equals("2"))
+				{
+					model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 0f, 0f, 0.5f,
+						0.1f, 0.2f, 100, 1,
+						new Material(ColorAttribute.createDiffuse(Color.YELLOW)), Usage.Position | Usage.Normal);
+					instances.get(i-1).add(new ModelInstance(model));
+				}
+				else if(text.equals("3"))
+				{
+					model = modelBuilder.createArrow(0.5f, 0f, 0.5f, 0f, 0f, 0.5f,
+						0.1f, 0.2f, 100, 1,
+						new Material(ColorAttribute.createDiffuse(Color.GREEN)), Usage.Position | Usage.Normal);
+					instances.get(i-1).add(new ModelInstance(model));
+				}
+				else
+				{
+					System.out.println("INFO: QR-Code Message outside ifs");
+					System.out.println("INFO: QR-Code Message:" + text);
+				}
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
 		}
 		
 		UtilAR.imDrawBackground(clean_image);
-		
 		// render all the different worlds
-		for( int j=0; j<i; j++)
+		for(int j=0; j<i; j++)
 		{
-		modelBatch.begin(cam.get(j));
-		modelBatch.render(instances.get(j), environment);
-		modelBatch.end();
+			modelBatch.begin(cam.get(j));
+			modelBatch.render(instances.get(j), environment);
+			modelBatch.end();
 		}
 	}
 	

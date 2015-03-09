@@ -8,5 +8,7 @@
 	<classpathentry kind="lib" path="/Fuchs-gdx-desktop/jar/gdx-natives.jar"/>
 	<classpathentry kind="lib" path="/Fuchs-gdx-desktop/jar/gdx.jar"/>
 	<classpathentry kind="lib" path="/Fuchs-gdx-desktop/jar/opencv-2410.jar"/>
+	<classpathentry kind="lib" path="/home/skeen/Desktop/AR/shared/AR/Fuchs-gdx-desktop/jar/javase-3.2.0.jar"/>
+	<classpathentry kind="lib" path="/home/skeen/Desktop/AR/shared/AR/Fuchs-gdx-desktop/jar/core-3.2.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
