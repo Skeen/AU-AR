@@ -67,15 +67,11 @@ public final class AI
     // 2-3 dest position x,y
     // 4   target figure (only used for transformation moves)
 
-
     // current board
     public int[][] myboard;
 
     // my move including transformation target if pawn ends up on final row
     private int[] myply;
-
-    // move animation counter
-    private long time;
 
     // all previous board configurations
     private int[][][] undo;
